@@ -1,0 +1,15 @@
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      run: npm run format -- {staged_files}
+      glob: "*.{ts,js,json}"
+    eslint:
+      run: npm run lint -- {staged_files}
+      glob: "src/**/*.{ts,js}"
+
+commit-msg:
+  parallel: true
+  commands:
+    commitlint:
+      run: npx commitlint --edit $1

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SendGridMailService } from '../send-grid-mail/send-grid-mail.service';
 import { JwtService } from '@nestjs/jwt';
@@ -17,6 +17,11 @@ export class AuthService {
   async register(payload: RegisterDto) {
     const { firstName, lastName, email, password } = payload;
 
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
     const hashPassword = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
       data: {
@@ -32,7 +37,7 @@ export class AuthService {
       data: {
         token,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
     });
 
@@ -47,8 +52,14 @@ export class AuthService {
       where: { token },
       include: { user: true },
     });
-    if (!record) throw new BadRequestException('Invalid token');
-    if (record.expiresAt < new Date()) throw new BadRequestException('Token expired');
+
+    if (!record) {
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    if (record.expiresAt < new Date()) {
+      throw new BadRequestException('Verification token has expired');
+    }
 
     await this.prisma.user.update({ where: { id: record.userId }, data: { emailVerified: true } });
     await this.prisma.emailVerificationToken.delete({ where: { token } });
@@ -60,11 +71,18 @@ export class AuthService {
     const { email, password } = payload;
 
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    if (!user.emailVerified) throw new UnauthorizedException('Email not verified');
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (!user.emailVerified) {
+      throw new UnauthorizedException('Please verify your email before logging in');
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) throw new UnauthorizedException('Invalid credentials');
+    if (!match) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
 
     return this.signToken({ userId: user.id, email: user.email });
   }

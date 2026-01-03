@@ -19,6 +19,7 @@ async function bootstrap() {
     .setDescription('Comprehensive API documentation for the AI Agent Restaurant application')
     .setVersion('1.0')
     .addTag('Authentication', 'User authentication and authorization endpoints')
+    .addTag('User', 'User profile and management endpoints')
     .addBearerAuth(
       {
         type: 'http',

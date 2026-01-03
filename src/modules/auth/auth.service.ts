@@ -90,6 +90,6 @@ export class AuthService {
   private signToken(payload: SignTokenDto) {
     const { userId, email } = payload;
 
-    return { accessToken: this.jwt.sign({ sub: userId, email }) };
+    return { accessToken: this.jwt.sign({ id: userId, email }) };
   }
 }

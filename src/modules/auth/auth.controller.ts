@@ -1,7 +1,14 @@
 import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RegisterResponseDto, VerifyEmailResponseDto, LoginResponseDto, ErrorResponseDto } from './dto';
+import {
+  RegisterDto,
+  LoginDto,
+  RegisterResponseDto,
+  VerifyEmailResponseDto,
+  LoginResponseDto,
+  ErrorResponseDto,
+} from './dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -11,7 +18,8 @@ export class AuthController {
   @Post('register')
   @ApiOperation({
     summary: 'Register a new user',
-    description: 'Creates a new user account and sends email verification. The user will receive an email with a verification link that must be clicked before they can log in.',
+    description:
+      'Creates a new user account and sends email verification. The user will receive an email with a verification link that must be clicked before they can log in.',
   })
   @ApiBody({
     type: RegisterDto,
@@ -39,7 +47,8 @@ export class AuthController {
   @Get('verify-email')
   @ApiOperation({
     summary: 'Verify user email',
-    description: 'Verifies user email using the verification token sent via email during registration. This endpoint is typically called when the user clicks the verification link in their email.',
+    description:
+      'Verifies user email using the verification token sent via email during registration. This endpoint is typically called when the user clicks the verification link in their email.',
   })
   @ApiQuery({
     name: 'token',
@@ -65,7 +74,8 @@ export class AuthController {
   @Post('login')
   @ApiOperation({
     summary: 'User login',
-    description: 'Authenticate user with email and password. Returns a JWT access token that must be included in the Authorization header for protected routes.',
+    description:
+      'Authenticate user with email and password. Returns a JWT access token that must be included in the Authorization header for protected routes.',
   })
   @ApiBody({
     type: LoginDto,

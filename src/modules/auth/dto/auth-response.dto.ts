@@ -19,7 +19,8 @@ export class VerifyEmailResponseDto {
 export class LoginResponseDto {
   @ApiProperty({
     description: 'JWT access token for authentication',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiam9obi5kb2VAZXhhbXBsZS5jb20iLCJpYXQiOjE3MDQ5MDAwMDAsImV4cCI6MTcwNDk4NjQwMH0...',
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiam9obi5kb2VAZXhhbXBsZS5jb20iLCJpYXQiOjE3MDQ5MDAwMDAsImV4cCI6MTcwNDk4NjQwMH0...',
   })
   accessToken: string;
 }

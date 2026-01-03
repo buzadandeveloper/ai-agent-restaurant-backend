@@ -1,13 +1,14 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags, ApiUnauthorizedResponse, ApiBadRequestResponse } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
 import {
-  LoginDto,
-  LoginResponseDto,
-  RegisterDto,
-  RegisterResponseDto,
-  VerifyEmailResponseDto,
-} from './dto';
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { LoginDto, LoginResponseDto, RegisterDto, RegisterResponseDto, VerifyEmailResponseDto } from './dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')

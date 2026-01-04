@@ -7,6 +7,9 @@ pre-commit:
     eslint:
       run: npm run lint -- {staged_files}
       glob: "src/**/*.{ts,js}"
+    tsc:
+      run: npx tsc --noEmit
+      glob: "src/**/*.{ts,js}"
 
 commit-msg:
   parallel: true

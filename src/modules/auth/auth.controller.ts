@@ -13,7 +13,7 @@ import { LoginDto, LoginResponseDto, RegisterDto, RegisterResponseDto, VerifyEma
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })

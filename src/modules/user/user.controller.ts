@@ -15,7 +15,7 @@ import type { Request } from 'express';
 @ApiTags('User')
 @Controller('/api/user')
 export class UserController {
-  constructor(private user: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({ status: 200, type: UserDto })
@@ -27,6 +27,6 @@ export class UserController {
   async getUserById(@Req() payload: Request): Promise<UserDto> {
     const userId = (payload.user as { id: number }).id;
 
-    return this.user.getUserById(userId);
+    return this.userService.getUserById(userId);
   }
 }

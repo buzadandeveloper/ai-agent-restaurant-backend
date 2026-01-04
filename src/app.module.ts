@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { seconds, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtThrottlerGuard } from './common/guards/jwt-throttler.guard';
+import { RestaurantModule } from './modules/restaurant/restaurant.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { JwtThrottlerGuard } from './common/guards/jwt-throttler.guard';
     AuthModule,
     UserModule,
     PrismaModule,
+    RestaurantModule,
   ],
   providers: [
     {

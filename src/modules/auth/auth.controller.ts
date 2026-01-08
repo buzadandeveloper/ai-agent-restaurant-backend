@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Response } from '@nestjs/common';
 import {
   ApiOperation,
   ApiQuery,
@@ -7,6 +7,7 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
+import type { Response as ResponseType } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto, RegisterDto, RegisterResponseDto, VerifyEmailResponseDto } from './dto';
 
@@ -28,8 +29,8 @@ export class AuthController {
   @ApiQuery({ name: 'token', type: 'string', required: true })
   @ApiResponse({ status: 200, type: VerifyEmailResponseDto })
   @ApiBadRequestResponse({ description: 'Bad request' })
-  verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
+  verifyEmail(@Query('token') token: string, @Response() res: ResponseType) {
+    return this.authService.verifyEmail(token, res);
   }
 
   @Post('login')

@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SendGridMailService } from '../send-grid-mail/send-grid-mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto, RegisterDto, SignTokenDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import type { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -41,30 +42,30 @@ export class AuthService {
       },
     });
 
-    const link = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const link = `${process.env.BACKEND_URL}/api/auth/verify-email?token=${token}`;
     await this.sendGridMail.sendVerificationEmail(email, link);
 
     return { message: 'Check your email to verify your account' };
   }
 
-  async verifyEmail(token: string) {
+  async verifyEmail(token: string, res: Response) {
     const record = await this.prisma.emailVerificationToken.findUnique({
       where: { token },
       include: { user: true },
     });
 
     if (!record) {
-      throw new BadRequestException('Invalid verification token');
+      return res.redirect(`${process.env.FRONTEND_URL}/authenticate?tab=login&status=invalidToken`);
     }
 
     if (record.expiresAt < new Date()) {
-      throw new BadRequestException('Verification token has expired');
+      return res.redirect(`${process.env.FRONTEND_URL}/authenticate?tab=login&status=tokenExpired`);
     }
 
     await this.prisma.user.update({ where: { id: record.userId }, data: { emailVerified: true } });
     await this.prisma.emailVerificationToken.delete({ where: { token } });
 
-    return { message: 'Email verified successfully' };
+    return res.redirect(`${process.env.FRONTEND_URL}/authenticate?tab=login&status=verified`);
   }
 
   async login(payload: LoginDto) {

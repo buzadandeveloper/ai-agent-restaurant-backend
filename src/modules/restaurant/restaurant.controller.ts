@@ -177,10 +177,7 @@ export class RestaurantController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @UseGuards(JwtAuthGuard)
   @Get(':id/menu')
-  async getRestaurantMenu(
-    @Param('id', ParseIntPipe) id: number,
-    @Req() req: AuthenticatedRequest,
-  ) {
+  async getRestaurantMenu(@Param('id', ParseIntPipe) id: number, @Req() req: AuthenticatedRequest) {
     const ownerId = req.user.id;
     return this.restaurantService.getRestaurantMenu(id, ownerId);
   }

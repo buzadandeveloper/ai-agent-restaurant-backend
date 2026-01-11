@@ -262,17 +262,14 @@ export class RestaurantService {
       include: {
         category: true,
       },
-      orderBy: [
-        { category: { name: 'asc' } },
-        { name: 'asc' }
-      ]
+      orderBy: [{ category: { name: 'asc' } }, { name: 'asc' }],
     });
 
     // Return flat structure suitable for table display and filtering
     return {
       restaurantId,
       restaurantName: restaurant.name,
-      items: menuItems.map(item => ({
+      items: menuItems.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -284,11 +281,14 @@ export class RestaurantService {
         categoryId: item.category.id,
         categoryName: item.category.name,
         categoryDescription: item.category.description,
-      }))
+      })),
     };
   }
 
-  async deleteRestaurantMenu(restaurantId: number, ownerId: number): Promise<{ message: string; restaurantId: number }> {
+  async deleteRestaurantMenu(
+    restaurantId: number,
+    ownerId: number,
+  ): Promise<{ message: string; restaurantId: number }> {
     // Verify restaurant exists and belongs to owner
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { id: restaurantId },

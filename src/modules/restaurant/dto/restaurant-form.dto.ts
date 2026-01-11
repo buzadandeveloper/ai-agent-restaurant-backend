@@ -2,7 +2,6 @@ import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-valid
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-
 export class RestaurantFormDto {
   @ApiProperty({ description: 'Restaurant name', example: 'Delicious Bistro' })
   @IsString()

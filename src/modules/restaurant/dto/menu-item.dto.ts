@@ -9,7 +9,7 @@ export class MenuItemDto {
 
   @ApiProperty({
     example: 'Fresh lettuce with Caesar dressing',
-    description: 'Menu item description'
+    description: 'Menu item description',
   })
   description: string;
 
@@ -25,14 +25,14 @@ export class MenuItemDto {
   @ApiProperty({
     example: ['vegetarian', 'healthy'],
     description: 'Menu item tags',
-    type: [String]
+    type: [String],
   })
   tags: string[];
 
   @ApiProperty({
     example: ['dairy'],
     description: 'Menu item allergens',
-    type: [String]
+    type: [String],
   })
   allergens: string[];
 
@@ -45,7 +45,7 @@ export class MenuItemDto {
   @ApiProperty({
     example: 'Starter dishes',
     description: 'Category description',
-    required: false
+    required: false,
   })
   categoryDescription?: string;
 }

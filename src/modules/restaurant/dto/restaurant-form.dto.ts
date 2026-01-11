@@ -2,6 +2,7 @@ import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-valid
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
+
 export class RestaurantFormDto {
   @ApiProperty({ description: 'Restaurant name', example: 'Delicious Bistro' })
   @IsString()
@@ -57,6 +58,6 @@ export class CreateRestaurantResponseDto {
   @ApiProperty({ description: 'Success message', example: 'Restaurant created' })
   message: string;
 
-  @ApiProperty({ description: 'ID of the created restaurant', example: 1 })
-  restaurantId: number;
+  @ApiProperty({ description: 'Restaurant' })
+  restaurant: RestaurantFormDto;
 }

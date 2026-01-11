@@ -57,6 +57,6 @@ export class CreateRestaurantResponseDto {
   @ApiProperty({ description: 'Success message', example: 'Restaurant created' })
   message: string;
 
-  @ApiProperty({ description: 'ID of the created restaurant', example: 1 })
-  restaurantId: number;
+  @ApiProperty({ description: 'Restaurant' })
+  restaurant: RestaurantFormDto;
 }

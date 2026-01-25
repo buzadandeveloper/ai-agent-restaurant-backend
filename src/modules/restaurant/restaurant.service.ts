@@ -266,10 +266,7 @@ export class RestaurantService {
     });
 
     // Return flat structure suitable for table display and filtering
-    return {
-      restaurantId,
-      restaurantName: restaurant.name,
-      items: menuItems.map((item) => ({
+    return  menuItems.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
@@ -280,9 +277,8 @@ export class RestaurantService {
         allergens: item.allergens,
         categoryId: item.category.id,
         categoryName: item.category.name,
-        categoryDescription: item.category.description,
-      })),
-    };
+      }))
+    ;
   }
 
   async deleteRestaurantMenu(

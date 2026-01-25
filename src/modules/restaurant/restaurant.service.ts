@@ -266,19 +266,18 @@ export class RestaurantService {
     });
 
     // Return flat structure suitable for table display and filtering
-    return  menuItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        currency: item.currency,
-        isAvailable: item.isAvailable,
-        tags: item.tags,
-        allergens: item.allergens,
-        categoryId: item.category.id,
-        categoryName: item.category.name,
-      }))
-    ;
+    return menuItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      currency: item.currency,
+      isAvailable: item.isAvailable,
+      tags: item.tags,
+      allergens: item.allergens,
+      categoryId: item.category.id,
+      categoryName: item.category.name,
+    }));
   }
 
   async deleteRestaurantMenu(

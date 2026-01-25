@@ -86,7 +86,8 @@ export class RestaurantService {
       const categoryCache = new Map();
       for (const row of rows) {
         const categoryName = row.category.trim();
-        let category = categoryCache.get(categoryName);
+        const cacheKey = `${restaurant.id}_${categoryName}`;
+        let category = categoryCache.get(cacheKey);
 
         if (!category) {
           category = await this.prisma.menuCategory.findFirst({
@@ -99,7 +100,7 @@ export class RestaurantService {
             });
           }
 
-          categoryCache.set(categoryName, category);
+          categoryCache.set(cacheKey, category);
         }
 
         await this.prisma.menuItem.create({
@@ -182,7 +183,8 @@ export class RestaurantService {
       const categoryCache = new Map();
       for (const row of rows) {
         const categoryName = row.category.trim();
-        let category = categoryCache.get(categoryName);
+        const cacheKey = `${updatedRestaurant.id}_${categoryName}`;
+        let category = categoryCache.get(cacheKey);
 
         if (!category) {
           category = await this.prisma.menuCategory.findFirst({
@@ -195,7 +197,7 @@ export class RestaurantService {
             });
           }
 
-          categoryCache.set(categoryName, category);
+          categoryCache.set(cacheKey, category);
         }
 
         await this.prisma.menuItem.create({
@@ -364,7 +366,8 @@ export class RestaurantService {
       const categoryCache = new Map();
       for (const row of rows) {
         const categoryName = row.category.trim();
-        let category = categoryCache.get(categoryName);
+        const cacheKey = `${restaurantId}_${categoryName}`;
+        let category = categoryCache.get(cacheKey);
 
         if (!category) {
           category = await this.prisma.menuCategory.findFirst({
@@ -377,7 +380,7 @@ export class RestaurantService {
             });
           }
 
-          categoryCache.set(categoryName, category);
+          categoryCache.set(cacheKey, category);
         }
 
         await this.prisma.menuItem.create({

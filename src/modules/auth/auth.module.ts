@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt/jwt.strategy';
 import { SendGridMailModule } from '../send-grid-mail/send-grid-mail.module';
+import { CleanupService } from './cron/cleanup.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { SendGridMailModule } from '../send-grid-mail/send-grid-mail.module';
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, CleanupService, JwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}

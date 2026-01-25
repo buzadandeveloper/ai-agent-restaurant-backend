@@ -41,11 +41,4 @@ export class MenuItemDto {
 
   @ApiProperty({ example: 'Appetizers', description: 'Category name' })
   categoryName: string;
-
-  @ApiProperty({
-    example: 'Starter dishes',
-    description: 'Category description',
-    required: false,
-  })
-  categoryDescription?: string;
 }

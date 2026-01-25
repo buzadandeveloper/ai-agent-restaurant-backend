@@ -6,6 +6,7 @@ import { LoginDto, RegisterDto, SignTokenDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import type { Response } from 'express';
+import { TWENTY_FOUR_HOURS_IN_MS } from '../../constants/time';
 
 @Injectable()
 export class AuthService {
@@ -38,7 +39,7 @@ export class AuthService {
       data: {
         token,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        expiresAt: new Date(Date.now() + TWENTY_FOUR_HOURS_IN_MS),
       },
     });
 

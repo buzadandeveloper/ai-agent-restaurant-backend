@@ -86,7 +86,8 @@ export class RestaurantService {
       const categoryCache = new Map();
       for (const row of rows) {
         const categoryName = row.category.trim();
-        let category = categoryCache.get(categoryName);
+        const cacheKey = `${restaurant.id}_${categoryName}`;
+        let category = categoryCache.get(cacheKey);
 
         if (!category) {
           category = await this.prisma.menuCategory.findFirst({
@@ -99,7 +100,7 @@ export class RestaurantService {
             });
           }
 
-          categoryCache.set(categoryName, category);
+          categoryCache.set(cacheKey, category);
         }
 
         await this.prisma.menuItem.create({
@@ -182,7 +183,8 @@ export class RestaurantService {
       const categoryCache = new Map();
       for (const row of rows) {
         const categoryName = row.category.trim();
-        let category = categoryCache.get(categoryName);
+        const cacheKey = `${updatedRestaurant.id}_${categoryName}`;
+        let category = categoryCache.get(cacheKey);
 
         if (!category) {
           category = await this.prisma.menuCategory.findFirst({
@@ -195,7 +197,7 @@ export class RestaurantService {
             });
           }
 
-          categoryCache.set(categoryName, category);
+          categoryCache.set(cacheKey, category);
         }
 
         await this.prisma.menuItem.create({
@@ -266,23 +268,18 @@ export class RestaurantService {
     });
 
     // Return flat structure suitable for table display and filtering
-    return {
-      restaurantId,
-      restaurantName: restaurant.name,
-      items: menuItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        currency: item.currency,
-        isAvailable: item.isAvailable,
-        tags: item.tags,
-        allergens: item.allergens,
-        categoryId: item.category.id,
-        categoryName: item.category.name,
-        categoryDescription: item.category.description,
-      })),
-    };
+    return menuItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      currency: item.currency,
+      isAvailable: item.isAvailable,
+      tags: item.tags,
+      allergens: item.allergens,
+      categoryId: item.category.id,
+      categoryName: item.category.name,
+    }));
   }
 
   async deleteRestaurantMenu(
@@ -369,7 +366,8 @@ export class RestaurantService {
       const categoryCache = new Map();
       for (const row of rows) {
         const categoryName = row.category.trim();
-        let category = categoryCache.get(categoryName);
+        const cacheKey = `${restaurantId}_${categoryName}`;
+        let category = categoryCache.get(cacheKey);
 
         if (!category) {
           category = await this.prisma.menuCategory.findFirst({
@@ -382,7 +380,7 @@ export class RestaurantService {
             });
           }
 
-          categoryCache.set(categoryName, category);
+          categoryCache.set(cacheKey, category);
         }
 
         await this.prisma.menuItem.create({

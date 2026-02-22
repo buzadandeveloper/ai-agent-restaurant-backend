@@ -26,7 +26,6 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('Authentication', 'User authentication and authorization endpoints')
     .addTag('User', 'User profile and management endpoints')
-    .addTag('Order Tables', 'Restaurant tables and orders management')
     .addBearerAuth(
       {
         type: 'http',

@@ -7,7 +7,8 @@ import { seconds, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtThrottlerGuard } from './common/guards/jwt-throttler.guard';
 import { RestaurantModule } from './modules/restaurant/restaurant.module';
-import { OrderTablesModule } from './modules/order-tables/order-tables.module';
+import { TablesModule } from './modules/tables/tables.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { OrderTablesModule } from './modules/order-tables/order-tables.module';
     UserModule,
     PrismaModule,
     RestaurantModule,
-    OrderTablesModule,
+    TablesModule,
+    OrdersModule,
   ],
   providers: [
     {

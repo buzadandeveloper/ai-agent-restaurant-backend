@@ -100,20 +100,6 @@ export class TableOrderResponseDto {
   updatedAt: Date;
 }
 
-export class TableRestaurantBasicResponseDto {
-  @ApiProperty({ example: 1 })
-  id: number;
-
-  @ApiProperty({ example: 'The Italian Corner' })
-  name: string;
-
-  @ApiProperty({ example: '123 Main Street, New York' })
-  address: string;
-
-  @ApiProperty({ example: 15 })
-  numberOfTables: number;
-}
-
 export class TableWithOrdersResponseDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -123,9 +109,6 @@ export class TableWithOrdersResponseDto {
 
   @ApiProperty({ example: 1 })
   restaurantId: number;
-
-  @ApiProperty({ type: () => TableRestaurantBasicResponseDto })
-  restaurant: TableRestaurantBasicResponseDto;
 
   @ApiProperty({ type: [TableOrderResponseDto], description: 'All orders for this table' })
   orders: TableOrderResponseDto[];

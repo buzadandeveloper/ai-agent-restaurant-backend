@@ -108,7 +108,7 @@ export class RestaurantService {
     const configKey = this.generateConfigKey();
 
     // Parse CSV first if provided to validate it BEFORE creating restaurant
-    let csvRows: CsvRow[] = [];
+    const csvRows: CsvRow[] = [];
     if (file && file.buffer) {
       await new Promise<void>((resolve, reject) => {
         const stream = Readable.from(file.buffer);
@@ -204,7 +204,7 @@ export class RestaurantService {
     }
 
     // Parse CSV first if provided to validate it BEFORE updating restaurant
-    let csvRows: CsvRow[] = [];
+    const csvRows: CsvRow[] = [];
     if (file && file.buffer) {
       await new Promise<void>((resolve, reject) => {
         const stream = Readable.from(file.buffer);

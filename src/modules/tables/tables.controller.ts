@@ -32,7 +32,8 @@ export class TablesController {
   @Get('restaurant/:restaurantId/:tableId')
   @ApiOperation({
     summary: 'Get specific table details with all orders',
-    description: 'Returns all information about a table including all its orders. Used by staff/admin to see detailed table information.',
+    description:
+      'Returns all information about a table including all its orders. Used by staff/admin to see detailed table information.',
   })
   @ApiParam({ name: 'restaurantId', description: 'Restaurant ID', type: Number })
   @ApiParam({ name: 'tableId', description: 'Table ID', type: Number })

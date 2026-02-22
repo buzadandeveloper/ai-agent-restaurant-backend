@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RestaurantFormDto, CreateRestaurantResponseDto, RestaurantDto } from './dto';
+import { CreateRestaurantResponseDto, RestaurantDto, RestaurantFormDto } from './dto';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import * as crypto from 'crypto';
@@ -24,6 +24,56 @@ export class RestaurantService {
     // Generate a unique config key with prefix 'rest_' followed by a random string
     const randomBytes = crypto.randomBytes(16).toString('hex');
     return `rest_${randomBytes.substring(0, 16)}`;
+  }
+
+  private validateCsvData(csvRows: CsvRow[]): void {
+    if (csvRows.length === 0) {
+      throw new BadRequestException('CSV file is empty or contains no valid data');
+    }
+
+    const errors: string[] = [];
+
+    csvRows.forEach((row, index) => {
+      const rowNumber = index + 2;
+
+      // Validate required fields
+      if (!row.name || row.name.trim() === '') {
+        errors.push(`Row ${rowNumber}: 'name' is required`);
+      }
+
+      if (!row.category || row.category.trim() === '') {
+        errors.push(`Row ${rowNumber}: 'category' is required`);
+      }
+
+      // Validate price
+      if (!row.price || row.price.trim() === '') {
+        errors.push(`Row ${rowNumber}: 'price' is required`);
+      } else {
+        const price = parseFloat(row.price);
+        if (isNaN(price)) {
+          errors.push(`Row ${rowNumber}: 'price' must be a valid number (found: "${row.price}")`);
+        } else if (price < 0) {
+          errors.push(`Row ${rowNumber}: 'price' must be a positive number`);
+        }
+      }
+
+      // Validate currency (optional, but if present should not be empty)
+      if (row.currency && row.currency.trim() === '') {
+        errors.push(`Row ${rowNumber}: 'currency' cannot be empty if provided`);
+      }
+
+      // Validate description (optional, but warn if too long)
+      if (row.description && row.description.length > 500) {
+        errors.push(`Row ${rowNumber}: 'description' is too long (max 500 characters)`);
+      }
+    });
+
+    if (errors.length > 0) {
+      throw new BadRequestException({
+        message: 'CSV validation failed',
+        errors: errors,
+      });
+    }
   }
 
   async getUserRestaurants(ownerId: number): Promise<RestaurantDto[]> {
@@ -57,68 +107,80 @@ export class RestaurantService {
   ): Promise<CreateRestaurantResponseDto> {
     const configKey = this.generateConfigKey();
 
-    const restaurant = await this.prisma.restaurant.create({
-      data: {
-        name: restaurantData.name,
-        description: restaurantData.description,
-        founder: restaurantData.founder,
-        administrator: restaurantData.administrator,
-        numberOfTables: restaurantData.numberOfTables,
-        phone: restaurantData.phone,
-        address: restaurantData.address,
-        configKey: configKey,
-        ownerId: ownerId,
-      },
-    });
-
-    // Process optional CSV menu file (uploaded as 'menuCsv' field in multipart/form-data)
+    // Parse CSV first if provided to validate it BEFORE creating restaurant
+    const csvRows: CsvRow[] = [];
     if (file && file.buffer) {
-      const rows: CsvRow[] = [];
       await new Promise<void>((resolve, reject) => {
         const stream = Readable.from(file.buffer);
         stream
           .pipe(csv())
-          .on('data', (data: CsvRow) => rows.push(data))
+          .on('data', (data: CsvRow) => csvRows.push(data))
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err) => reject(new BadRequestException(`CSV parsing failed: ${err.message}`)));
       });
 
-      const categoryCache = new Map();
-      for (const row of rows) {
-        const categoryName = row.category.trim();
-        const cacheKey = `${restaurant.id}_${categoryName}`;
-        let category = categoryCache.get(cacheKey);
+      // Validate CSV data before processing
+      this.validateCsvData(csvRows);
+    }
 
-        if (!category) {
-          category = await this.prisma.menuCategory.findFirst({
-            where: { name: categoryName, restaurantId: restaurant.id },
-          });
+    // Use transaction to ensure atomicity - if anything fails, nothing is saved
+    const restaurant = await this.prisma.$transaction(async (tx) => {
+      // Create restaurant
+      const newRestaurant = await tx.restaurant.create({
+        data: {
+          name: restaurantData.name,
+          description: restaurantData.description,
+          founder: restaurantData.founder,
+          administrator: restaurantData.administrator,
+          numberOfTables: restaurantData.numberOfTables,
+          phone: restaurantData.phone,
+          address: restaurantData.address,
+          configKey: configKey,
+          ownerId: ownerId,
+        },
+      });
+
+      // Process CSV menu if provided (inside transaction)
+      if (csvRows.length > 0) {
+        const categoryCache = new Map();
+        for (const row of csvRows) {
+          const categoryName = row.category.trim();
+          const cacheKey = `${newRestaurant.id}_${categoryName}`;
+          let category = categoryCache.get(cacheKey);
 
           if (!category) {
-            category = await this.prisma.menuCategory.create({
-              data: { name: categoryName, restaurantId: restaurant.id },
+            category = await tx.menuCategory.findFirst({
+              where: { name: categoryName, restaurantId: newRestaurant.id },
             });
+
+            if (!category) {
+              category = await tx.menuCategory.create({
+                data: { name: categoryName, restaurantId: newRestaurant.id },
+              });
+            }
+
+            categoryCache.set(cacheKey, category);
           }
 
-          categoryCache.set(cacheKey, category);
+          await tx.menuItem.create({
+            data: {
+              name: row.name,
+              description: row.description,
+              price: parseFloat(row.price),
+              currency: row.currency || 'MDL',
+              tags: row.tags ? row.tags.split(',') : [],
+              allergens: row.allergens ? row.allergens.split(',') : [],
+              isAvailable: row.isAvailable
+                ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
+                : true,
+              categoryId: category.id,
+            },
+          });
         }
-
-        await this.prisma.menuItem.create({
-          data: {
-            name: row.name,
-            description: row.description,
-            price: parseFloat(row.price),
-            currency: row.currency || 'MDL',
-            tags: row.tags ? row.tags.split(',') : [],
-            allergens: row.allergens ? row.allergens.split(',') : [],
-            isAvailable: row.isAvailable
-              ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
-              : true,
-            categoryId: category.id,
-          },
-        });
       }
-    }
+
+      return newRestaurant;
+    });
 
     return { message: 'Restaurant created', restaurant };
   }
@@ -141,81 +203,94 @@ export class RestaurantService {
       throw new ForbiddenException('You do not have permission to update this restaurant');
     }
 
-    const updatedRestaurant = await this.prisma.restaurant.update({
-      where: { id: restaurantId },
-      data: {
-        name: restaurantData.name,
-        description: restaurantData.description,
-        founder: restaurantData.founder,
-        administrator: restaurantData.administrator,
-        numberOfTables: restaurantData.numberOfTables,
-        phone: restaurantData.phone,
-        address: restaurantData.address,
-      },
-    });
-
+    // Parse CSV first if provided to validate it BEFORE updating restaurant
+    const csvRows: CsvRow[] = [];
     if (file && file.buffer) {
-      // Delete existing menu items and categories for this restaurant to avoid duplicates
-      await this.prisma.menuItem.deleteMany({
-        where: {
-          category: {
-            restaurantId: updatedRestaurant.id,
-          },
-        },
-      });
-
-      await this.prisma.menuCategory.deleteMany({
-        where: {
-          restaurantId: updatedRestaurant.id,
-        },
-      });
-
-      const rows: CsvRow[] = [];
       await new Promise<void>((resolve, reject) => {
         const stream = Readable.from(file.buffer);
         stream
           .pipe(csv())
-          .on('data', (data: CsvRow) => rows.push(data))
+          .on('data', (data: CsvRow) => csvRows.push(data))
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err) => reject(new BadRequestException(`CSV parsing failed: ${err.message}`)));
       });
 
-      const categoryCache = new Map();
-      for (const row of rows) {
-        const categoryName = row.category.trim();
-        const cacheKey = `${updatedRestaurant.id}_${categoryName}`;
-        let category = categoryCache.get(cacheKey);
+      // Validate CSV data before processing
+      this.validateCsvData(csvRows);
+    }
 
-        if (!category) {
-          category = await this.prisma.menuCategory.findFirst({
-            where: { name: categoryName, restaurantId: updatedRestaurant.id },
-          });
+    // Use transaction to ensure atomicity
+    const updatedRestaurant = await this.prisma.$transaction(async (tx) => {
+      // Update restaurant
+      const updated = await tx.restaurant.update({
+        where: { id: restaurantId },
+        data: {
+          name: restaurantData.name,
+          description: restaurantData.description,
+          founder: restaurantData.founder,
+          administrator: restaurantData.administrator,
+          numberOfTables: restaurantData.numberOfTables,
+          phone: restaurantData.phone,
+          address: restaurantData.address,
+        },
+      });
 
-          if (!category) {
-            category = await this.prisma.menuCategory.create({
-              data: { name: categoryName, restaurantId: updatedRestaurant.id },
-            });
-          }
-
-          categoryCache.set(cacheKey, category);
-        }
-
-        await this.prisma.menuItem.create({
-          data: {
-            name: row.name,
-            description: row.description,
-            price: parseFloat(row.price),
-            currency: row.currency || 'MDL',
-            tags: row.tags ? row.tags.split(',') : [],
-            allergens: row.allergens ? row.allergens.split(',') : [],
-            isAvailable: row.isAvailable
-              ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
-              : true,
-            categoryId: category.id,
+      // If CSV provided, replace menu
+      if (csvRows.length > 0) {
+        // Delete existing menu items and categories for this restaurant to avoid duplicates
+        await tx.menuItem.deleteMany({
+          where: {
+            category: {
+              restaurantId: updated.id,
+            },
           },
         });
+
+        await tx.menuCategory.deleteMany({
+          where: {
+            restaurantId: updated.id,
+          },
+        });
+
+        const categoryCache = new Map();
+        for (const row of csvRows) {
+          const categoryName = row.category.trim();
+          const cacheKey = `${updated.id}_${categoryName}`;
+          let category = categoryCache.get(cacheKey);
+
+          if (!category) {
+            category = await tx.menuCategory.findFirst({
+              where: { name: categoryName, restaurantId: updated.id },
+            });
+
+            if (!category) {
+              category = await tx.menuCategory.create({
+                data: { name: categoryName, restaurantId: updated.id },
+              });
+            }
+
+            categoryCache.set(cacheKey, category);
+          }
+
+          await tx.menuItem.create({
+            data: {
+              name: row.name,
+              description: row.description,
+              price: parseFloat(row.price),
+              currency: row.currency || 'MDL',
+              tags: row.tags ? row.tags.split(',') : [],
+              allergens: row.allergens ? row.allergens.split(',') : [],
+              isAvailable: row.isAvailable
+                ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
+                : true,
+              categoryId: category.id,
+            },
+          });
+        }
       }
-    }
+
+      return updated;
+    });
 
     return { message: 'Restaurant updated successfully', restaurant: updatedRestaurant };
   }
@@ -336,46 +411,53 @@ export class RestaurantService {
       throw new ForbiddenException('You do not have permission to upload menu for this restaurant');
     }
 
-    // First delete existing menu items and categories to replace them
-    await this.prisma.menuItem.deleteMany({
-      where: {
-        category: {
-          restaurantId: restaurantId,
-        },
-      },
-    });
-
-    await this.prisma.menuCategory.deleteMany({
-      where: {
-        restaurantId: restaurantId,
-      },
-    });
-
-    // Process the new CSV menu file
+    // Parse CSV first to validate it BEFORE deleting existing menu
+    const csvRows: CsvRow[] = [];
     if (file && file.buffer) {
-      const rows: CsvRow[] = [];
       await new Promise<void>((resolve, reject) => {
         const stream = Readable.from(file.buffer);
         stream
           .pipe(csv())
-          .on('data', (data: CsvRow) => rows.push(data))
+          .on('data', (data: CsvRow) => csvRows.push(data))
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err) => reject(new BadRequestException(`CSV parsing failed: ${err.message}`)));
       });
 
+      // Validate CSV data before processing
+      this.validateCsvData(csvRows);
+    }
+
+    // Use transaction to ensure atomicity - if CSV processing fails, old menu stays intact
+    await this.prisma.$transaction(async (tx) => {
+      // First delete existing menu items and categories to replace them
+      await tx.menuItem.deleteMany({
+        where: {
+          category: {
+            restaurantId: restaurantId,
+          },
+        },
+      });
+
+      await tx.menuCategory.deleteMany({
+        where: {
+          restaurantId: restaurantId,
+        },
+      });
+
+      // Process the new CSV menu file
       const categoryCache = new Map();
-      for (const row of rows) {
+      for (const row of csvRows) {
         const categoryName = row.category.trim();
         const cacheKey = `${restaurantId}_${categoryName}`;
         let category = categoryCache.get(cacheKey);
 
         if (!category) {
-          category = await this.prisma.menuCategory.findFirst({
+          category = await tx.menuCategory.findFirst({
             where: { name: categoryName, restaurantId: restaurantId },
           });
 
           if (!category) {
-            category = await this.prisma.menuCategory.create({
+            category = await tx.menuCategory.create({
               data: { name: categoryName, restaurantId: restaurantId },
             });
           }
@@ -383,7 +465,7 @@ export class RestaurantService {
           categoryCache.set(cacheKey, category);
         }
 
-        await this.prisma.menuItem.create({
+        await tx.menuItem.create({
           data: {
             name: row.name,
             description: row.description,
@@ -398,7 +480,7 @@ export class RestaurantService {
           },
         });
       }
-    }
+    });
 
     return { message: 'Restaurant menu uploaded successfully', restaurantId };
   }

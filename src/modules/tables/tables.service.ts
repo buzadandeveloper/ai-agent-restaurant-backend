@@ -106,7 +106,6 @@ export class TablesService {
     const table = await this.prisma.table.findUnique({
       where: { id: tableId },
       include: {
-        restaurant: true,
         orders: {
           include: {
             items: {

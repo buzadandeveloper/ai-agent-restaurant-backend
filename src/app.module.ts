@@ -9,6 +9,7 @@ import { JwtThrottlerGuard } from './common/guards/jwt-throttler.guard';
 import { RestaurantModule } from './modules/restaurant/restaurant.module';
 import { TablesModule } from './modules/tables/tables.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { AiAgentModule } from './modules/ai-agent/ai-agent.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { OrdersModule } from './modules/orders/orders.module';
     RestaurantModule,
     TablesModule,
     OrdersModule,
+    AiAgentModule,
   ],
   providers: [
     {

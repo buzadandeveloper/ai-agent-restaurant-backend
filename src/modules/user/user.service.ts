@@ -14,6 +14,7 @@ export class UserService {
         firstName: true,
         lastName: true,
         email: true,
+        configKey: true,
         createdAt: true,
         updatedAt: true,
       },

@@ -1,17 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateOrderDto } from './dto';
+import { CreateOrderDto, CreateOrderItemDto } from './dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Creates a new order for a table.
-   * Validates the restaurant and table with full security checks.
-   * Table ID comes from the URL path (client is at this table).
-   */
   async createOrder(restaurantId: number, tableId: number, createOrderDto: CreateOrderDto) {
     const { items } = createOrderDto;
 
@@ -43,7 +38,7 @@ export class OrdersService {
       where: {
         id: { in: menuItemIds },
         category: {
-          restaurantId, // Critical security check - ensures items belong to this restaurant
+          restaurantId,
         },
         isAvailable: true,
       },
@@ -100,92 +95,10 @@ export class OrdersService {
   }
 
   /**
-   * Gets a specific order with all details.
-   * Validates that the order belongs to the specified restaurant and table.
-   */
-  async getOrderById(restaurantId: number, tableId: number, orderId: number) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: {
-          include: {
-            menuItem: {
-              include: {
-                category: true,
-              },
-            },
-          },
-        },
-        table: {
-          include: {
-            restaurant: true,
-          },
-        },
-      },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    if (order.table.restaurantId !== restaurantId) {
-      throw new NotFoundException('Order not found in this restaurant');
-    }
-
-    if (order.tableId !== tableId) {
-      throw new NotFoundException('Order not found at this table');
-    }
-
-    return order;
-  }
-
-  /**
-   * Cancels an order (deletes it).
-   * Validates that the order belongs to the specified restaurant and table.
-   */
-  async cancelOrder(restaurantId: number, tableId: number, orderId: number) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        table: true,
-      },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    if (order.table.restaurantId !== restaurantId) {
-      throw new NotFoundException('Order not found in this restaurant');
-    }
-
-    if (order.tableId !== tableId) {
-      throw new NotFoundException('Order not found at this table');
-    }
-
-    return this.prisma.order.delete({
-      where: { id: orderId },
-      include: {
-        items: {
-          include: {
-            menuItem: true,
-          },
-        },
-        table: true,
-      },
-    });
-  }
-
-  /**
    * Adds items to an existing order.
    * Validates that new items belong to the same restaurant and order is at correct table.
    */
-  async addItemsToOrder(
-    restaurantId: number,
-    tableId: number,
-    orderId: number,
-    items: { menuItemId: number; quantity: number }[],
-  ) {
+  async addItemsToOrder(restaurantId: number, tableId: number, orderId: number, items: CreateOrderItemDto[]) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -216,7 +129,7 @@ export class OrdersService {
       where: {
         id: { in: menuItemIds },
         category: {
-          restaurantId, // Critical security check
+          restaurantId,
         },
         isAvailable: true,
       },

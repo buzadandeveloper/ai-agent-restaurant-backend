@@ -16,26 +16,15 @@ export class CreateOrderItemDto {
   quantity: number;
 }
 
+// Base DTO for order items operations
 export class CreateOrderDto {
   @ApiProperty({
-    description: 'List of ordered items',
+    description: 'List of order items',
     type: [CreateOrderItemDto],
     example: [
       { menuItemId: 1, quantity: 2 },
       { menuItemId: 3, quantity: 1 },
     ],
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateOrderItemDto)
-  items: CreateOrderItemDto[];
-}
-
-export class AddItemsToOrderDto {
-  @ApiProperty({
-    description: 'List of items to add to the order',
-    type: [CreateOrderItemDto],
-    example: [{ menuItemId: 5, quantity: 1 }],
   })
   @IsArray()
   @ValidateNested({ each: true })

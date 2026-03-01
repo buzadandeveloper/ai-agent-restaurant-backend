@@ -1,19 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-  ParseIntPipe,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, AddItemsToOrderDto, OrderResponseDto } from './dto';
+import { CreateOrderDto, OrderResponseDto } from './dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 
 @ApiTags('Orders')
@@ -44,25 +32,6 @@ export class OrdersController {
     return this.ordersService.createOrder(restaurantId, tableId, createOrderDto);
   }
 
-  @Get('restaurant/:restaurantId/table/:tableId/:orderId')
-  @ApiOperation({
-    summary: 'Get order details',
-    description: 'Returns all details of an order. Validates order belongs to specified restaurant and table.',
-  })
-  @ApiParam({ name: 'restaurantId', description: 'Restaurant ID', type: Number })
-  @ApiParam({ name: 'tableId', description: 'Table ID', type: Number })
-  @ApiParam({ name: 'orderId', description: 'Order ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Order details returned successfully', type: OrderResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 404, description: 'Order not found or does not belong to this restaurant/table' })
-  async getOrderById(
-    @Param('restaurantId', ParseIntPipe) restaurantId: number,
-    @Param('tableId', ParseIntPipe) tableId: number,
-    @Param('orderId', ParseIntPipe) orderId: number,
-  ) {
-    return this.ordersService.getOrderById(restaurantId, tableId, orderId);
-  }
-
   @Patch('restaurant/:restaurantId/table/:tableId/:orderId')
   @ApiOperation({
     summary: 'Add items to an existing order',
@@ -83,27 +52,8 @@ export class OrdersController {
     @Param('restaurantId', ParseIntPipe) restaurantId: number,
     @Param('tableId', ParseIntPipe) tableId: number,
     @Param('orderId', ParseIntPipe) orderId: number,
-    @Body() dto: AddItemsToOrderDto,
+    @Body() addItemsDto: CreateOrderDto,
   ) {
-    return this.ordersService.addItemsToOrder(restaurantId, tableId, orderId, dto.items);
-  }
-
-  @Delete('restaurant/:restaurantId/table/:tableId/:orderId')
-  @ApiOperation({
-    summary: 'Cancel an order',
-    description: 'Deletes an order. Client or restaurant staff can cancel.',
-  })
-  @ApiParam({ name: 'restaurantId', description: 'Restaurant ID', type: Number })
-  @ApiParam({ name: 'tableId', description: 'Table ID', type: Number })
-  @ApiParam({ name: 'orderId', description: 'Order ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Order cancelled successfully', type: OrderResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 404, description: 'Order not found or does not belong to this restaurant/table' })
-  async cancelOrder(
-    @Param('restaurantId', ParseIntPipe) restaurantId: number,
-    @Param('tableId', ParseIntPipe) tableId: number,
-    @Param('orderId', ParseIntPipe) orderId: number,
-  ) {
-    return this.ordersService.cancelOrder(restaurantId, tableId, orderId);
+    return this.ordersService.addItemsToOrder(restaurantId, tableId, orderId, addItemsDto.items);
   }
 }

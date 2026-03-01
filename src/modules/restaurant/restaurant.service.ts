@@ -3,7 +3,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRestaurantResponseDto, RestaurantDto, RestaurantFormDto } from './dto';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
-import * as crypto from 'crypto';
 
 interface CsvRow {
   name: string;
@@ -19,12 +18,6 @@ interface CsvRow {
 @Injectable()
 export class RestaurantService {
   constructor(private prisma: PrismaService) {}
-
-  private generateConfigKey(): string {
-    // Generate a unique config key with prefix 'rest_' followed by a random string
-    const randomBytes = crypto.randomBytes(16).toString('hex');
-    return `rest_${randomBytes.substring(0, 16)}`;
-  }
 
   private validateCsvData(csvRows: CsvRow[]): void {
     if (csvRows.length === 0) {
@@ -105,8 +98,6 @@ export class RestaurantService {
     ownerId: number,
     file?: Express.Multer.File,
   ): Promise<CreateRestaurantResponseDto> {
-    const configKey = this.generateConfigKey();
-
     // Parse CSV first if provided to validate it BEFORE creating restaurant
     const csvRows: CsvRow[] = [];
     if (file && file.buffer) {
@@ -135,7 +126,6 @@ export class RestaurantService {
           numberOfTables: restaurantData.numberOfTables,
           phone: restaurantData.phone,
           address: restaurantData.address,
-          configKey: configKey,
           ownerId: ownerId,
         },
       });

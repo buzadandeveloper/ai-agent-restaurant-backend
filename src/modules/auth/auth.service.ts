@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto, RegisterDto, SignTokenDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import * as crypto from 'crypto';
 import type { Response } from 'express';
 import { TWENTY_FOUR_HOURS_IN_MS } from '../../constants/time';
 
@@ -16,6 +17,12 @@ export class AuthService {
     private sendGridMail: SendGridMailService,
   ) {}
 
+  private generateConfigKey(): string {
+    // Generate a unique config key with prefix 'acc_' followed by a random string
+    const randomBytes = crypto.randomBytes(16).toString('hex');
+    return `acc_${randomBytes.substring(0, 16)}`;
+  }
+
   async register(payload: RegisterDto) {
     const { firstName, lastName, email, password } = payload;
 
@@ -25,12 +32,15 @@ export class AuthService {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
+    const configKey = this.generateConfigKey();
+
     const user = await this.prisma.user.create({
       data: {
         firstName,
         lastName,
         email,
         password: hashPassword,
+        configKey,
       },
     });
 

@@ -26,6 +26,12 @@ export class UserDto {
   email: string;
 
   @ApiProperty({
+    description: 'Unique configuration key for the user',
+    example: 'acc_a1b2c3d4e5f6g7h8',
+  })
+  configKey: string;
+
+  @ApiProperty({
     description: 'Date when the user was created',
     example: '2024-01-15T10:30:00Z',
   })

@@ -28,9 +28,6 @@ export class RestaurantDto {
   @ApiProperty({ description: 'Restaurant address', example: '123 Main Street, Chisinau, Moldova' })
   address: string;
 
-  @ApiProperty({ description: 'Unique configuration key for widget integration', example: 'rest_ak7x9m2v4n8p1q3w' })
-  configKey: string;
-
   @ApiProperty({ description: 'ID of the restaurant owner', example: 1 })
   ownerId: number;
 

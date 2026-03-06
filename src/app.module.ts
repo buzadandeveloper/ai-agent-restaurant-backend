@@ -10,6 +10,7 @@ import { RestaurantModule } from './modules/restaurant/restaurant.module';
 import { TablesModule } from './modules/tables/tables.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AiAgentModule } from './modules/ai-agent/ai-agent.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AiAgentModule } from './modules/ai-agent/ai-agent.module';
     TablesModule,
     OrdersModule,
     AiAgentModule,
+    StatisticsModule,
   ],
   providers: [
     {

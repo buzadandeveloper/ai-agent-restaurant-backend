@@ -74,4 +74,8 @@ export class AiAgentService {
   async addItemsToOrder(restaurantId: number, tableId: number, orderId: number, items: CreateOrderItemDto[]) {
     return this.ordersService.addItemsToOrder(restaurantId, tableId, orderId, items);
   }
+
+  async payBill(restaurantId: number, tableId: number) {
+    return this.ordersService.payBill(restaurantId, tableId);
+  }
 }

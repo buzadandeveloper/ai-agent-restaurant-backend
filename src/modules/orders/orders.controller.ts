@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, OrderResponseDto } from './dto';
+import { CreateOrderDto, OrderResponseDto, PayBillResponseDto } from './dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 
 @ApiTags('Orders')
@@ -55,5 +55,24 @@ export class OrdersController {
     @Body() addItemsDto: CreateOrderDto,
   ) {
     return this.ordersService.addItemsToOrder(restaurantId, tableId, orderId, addItemsDto.items);
+  }
+
+  @Post('restaurant/:restaurantId/table/:tableId/pay')
+  @ApiOperation({
+    summary: 'Pay bill for a table',
+    description:
+      'Processes payment for all orders at a table. Updates daily statistics, clears the table, and makes it available.',
+  })
+  @ApiParam({ name: 'restaurantId', description: 'Restaurant ID', type: Number })
+  @ApiParam({ name: 'tableId', description: 'Table ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Bill paid successfully', type: PayBillResponseDto })
+  @ApiResponse({ status: 400, description: 'No active orders at this table' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'Table not found' })
+  async payBill(
+    @Param('restaurantId', ParseIntPipe) restaurantId: number,
+    @Param('tableId', ParseIntPipe) tableId: number,
+  ) {
+    return this.ordersService.payBill(restaurantId, tableId);
   }
 }

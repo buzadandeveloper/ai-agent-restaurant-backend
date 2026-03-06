@@ -49,7 +49,7 @@ export const tools = [
         },
         tableId: {
           type: 'number',
-          description: 'ID-ul mesei',
+          description: 'ID-ul mesei (NU numărul mesei, verifică din lista de mese)',
         },
         orderId: {
           type: 'number',
@@ -75,6 +75,26 @@ export const tools = [
         },
       },
       required: ['restaurantId', 'tableId', 'orderId', 'items'],
+    },
+  },
+  {
+    type: 'function',
+    name: 'pay_bill',
+    description:
+      'Folosește acest tool când clientul spune că vrea să plătească, să achite, să închidă nota, să ceară nota sau să finalizeze comanda. Tool-ul procesează plata finală pentru masa curentă.',
+    parameters: {
+      type: 'object',
+      properties: {
+        restaurantId: {
+          type: 'number',
+          description: 'ID-ul restaurantului',
+        },
+        tableId: {
+          type: 'number',
+          description: 'ID-ul intern al mesei, nu numărul afișat al mesei',
+        },
+      },
+      required: ['restaurantId', 'tableId'],
     },
   },
 ];

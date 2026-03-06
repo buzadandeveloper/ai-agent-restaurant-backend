@@ -109,3 +109,16 @@ model OrderItem {
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
+
+model DailyStats {
+  id           Int      @id @default(autoincrement())
+  restaurantId Int
+  date         DateTime @db.Date
+  ordersCount  Int      @default(0)
+  totalRevenue Decimal  @default(0) @db.Decimal(10, 2)
+  currency     String   @default("MDL")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([restaurantId, date])
+}

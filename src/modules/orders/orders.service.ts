@@ -185,4 +185,88 @@ export class OrdersService {
       },
     });
   }
+
+  async payBill(restaurantId: number, tableId: number) {
+    const table = await this.prisma.table.findUnique({
+      where: {
+        id: tableId,
+      },
+      include: {
+        orders: {
+          include: {
+            items: {
+              include: {
+                menuItem: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!table) {
+      throw new NotFoundException('Table not found');
+    }
+
+    if (table.restaurantId !== restaurantId) {
+      throw new NotFoundException('Table not found in this restaurant');
+    }
+
+    if (table.orders.length === 0) {
+      throw new BadRequestException('No active orders at this table');
+    }
+
+    const firstOrder = table.orders[0];
+    const totalAmount = table.orders.reduce((sum, order) => sum + Number(order.total), 0);
+    const currency = firstOrder.currency;
+
+    const allItems = table.orders.flatMap((order) =>
+      order.items.map((item) => ({
+        menuItemName: item.menuItem.name,
+        quantity: item.quantity,
+        price: Number(item.price),
+        total: Number(item.price) * item.quantity,
+      })),
+    );
+
+    await this.prisma.$transaction(async (prisma) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      await prisma.dailyStats.upsert({
+        where: {
+          restaurantId_date: {
+            restaurantId,
+            date: today,
+          },
+        },
+        update: {
+          ordersCount: { increment: table.orders.length },
+          totalRevenue: { increment: new Prisma.Decimal(totalAmount) },
+        },
+        create: {
+          restaurantId,
+          date: today,
+          ordersCount: table.orders.length,
+          totalRevenue: new Prisma.Decimal(totalAmount),
+          currency,
+        },
+      });
+
+      await prisma.order.deleteMany({
+        where: {
+          tableId: table.id,
+        },
+      });
+    });
+
+    return {
+      message: 'Bill paid successfully',
+      tableNumber: table.tableNumber,
+      ordersCount: table.orders.length,
+      totalAmount,
+      currency,
+      items: allItems,
+    };
+  }
 }

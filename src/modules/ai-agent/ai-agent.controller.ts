@@ -55,4 +55,11 @@ export class AiAgentController {
   ) {
     return this.aiAgentService.addItemsToOrder(body.restaurantId, body.tableId, body.orderId, body.items);
   }
+
+  @Post('tool/pay-bill')
+  @ApiOperation({ summary: 'Tool call - Pay bill' })
+  @ApiResponse({ status: 200, description: 'Bill paid successfully' })
+  async toolPayBill(@Body() body: { restaurantId: number; tableId: number }) {
+    return this.aiAgentService.payBill(body.restaurantId, body.tableId);
+  }
 }

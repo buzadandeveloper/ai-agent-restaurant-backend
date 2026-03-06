@@ -1,13 +1,11 @@
-import { getKnowledgeBase } from './get-knowledge-base';
 import { KnowledgeBaseData } from '../types/knowledge-base-data.types';
 
-export const getInstructions = (user: KnowledgeBaseData) => {
-  const knowledgeBase = getKnowledgeBase(user);
-
-  const ownerFullName = `${user.firstName} ${user.lastName}`;
-
+export const getInstructions = (knowledgeBase: KnowledgeBaseData) => {
   return `Vorbești EXCLUSIV în limba română.
-Ești asistent virtual pentru restaurantele deținute de ${ownerFullName}.
+Ești asistent virtual pentru restaurante, 
+specializat în preluarea comenzilor clienților la masă. 
+Urmează cu strictețe pașii de mai jos pentru a ajuta clienții 
+să plaseze comenzi corecte și complete.
 
 ========================================
 KNOWLEDGE BASE (Date structurate JSON)

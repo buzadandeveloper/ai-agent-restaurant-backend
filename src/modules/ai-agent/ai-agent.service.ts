@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { OrdersService } from '../orders/orders.service';
 import { buildAgentConfig } from './utils/build-agent-config';
 import { CreateOrderDto, CreateOrderItemDto } from '../orders/dto';
-import { SessionResponseDto } from './dto/index';
+import { AxiosResponse } from 'axios';
 import axios from 'axios';
+import { SessionResponseDto } from './dto/index';
+import { getKnowledgeBase } from './utils/get-knowledge-base';
 
 @Injectable()
 export class AiAgentService {
@@ -40,16 +42,28 @@ export class AiAgentService {
       throw new NotFoundException('User or restaurant not found');
     }
 
-    const agentConfig = buildAgentConfig(user);
+    const knowledgeBase = getKnowledgeBase(user);
+    const agentConfig = buildAgentConfig(knowledgeBase);
 
-    const response = await axios.post<SessionResponseDto>('https://api.openai.com/v1/realtime/sessions', agentConfig, {
-      headers: {
-        Authorization: `Bearer ${this.configService.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response: AxiosResponse<SessionResponseDto> = await axios.post(
+        'https://api.openai.com/v1/realtime/sessions',
+        agentConfig,
+        {
+          headers: {
+            Authorization: `Bearer ${this.configService.get<string>('OPENAI_API_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: 'Failed to create session',
+        error,
+      });
+    }
   }
 
   async createOrder(restaurantId: number, tableId: number, items: CreateOrderItemDto[]) {

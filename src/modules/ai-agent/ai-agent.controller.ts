@@ -26,7 +26,9 @@ export class AiAgentController {
       if (err instanceof HttpException) {
         return res.status(err.getStatus()).json({ message: err.message });
       }
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Failed to create session' });
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Failed to create session', error: err instanceof Error ? err.message : String(err) });
     }
   }
 

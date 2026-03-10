@@ -35,23 +35,6 @@ export class DailyStatsResponseDto {
     endDate: Date;
   };
 
-  @ApiProperty({
-    example: {
-      totalOrders: 450,
-      totalRevenue: 13515.0,
-      currency: 'MDL',
-      averageOrderValue: 30.03,
-      daysWithOrders: 28,
-    },
-  })
-  summary: {
-    totalOrders: number;
-    totalRevenue: number;
-    currency: string;
-    averageOrderValue: number;
-    daysWithOrders: number;
-  };
-
   @ApiProperty({ type: [DailyStatDto] })
   dailyData: DailyStatDto[];
 }

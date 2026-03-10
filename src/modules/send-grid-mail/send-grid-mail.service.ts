@@ -29,4 +29,24 @@ export class SendGridMailService {
       `,
     });
   }
+
+  async sendPasswordResetEmail(email: string, code: string) {
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+    if (!fromEmail) {
+      throw new Error('SENDGRID_FROM_EMAIL environment variable is required');
+    }
+
+    await sgMail.send({
+      to: email,
+      from: fromEmail,
+      subject: 'Reset your password',
+      html: `
+        <p>Hello,</p>
+        <p>You requested to reset your password. Please use the following code to proceed:</p>
+        <h2 style="letter-spacing: 5px; font-family: monospace;">${code}</h2>
+        <p>This code expires in 15 minutes.</p>
+        <p>If you did not request a password reset, please ignore this email.</p>
+      `,
+    });
+  }
 }

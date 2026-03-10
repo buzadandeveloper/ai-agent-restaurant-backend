@@ -33,8 +33,40 @@ export class StatisticsService {
       },
     });
 
-    const totalOrders = stats.reduce((sum, stat) => sum + stat.ordersCount, 0);
-    const totalRevenue = stats.reduce((sum, stat) => sum + Number(stat.totalRevenue), 0);
+    const allDates: Date[] = [];
+    const currentDate = new Date(start);
+
+    while (currentDate <= end) {
+      allDates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Map stats to a dictionary for quick lookup
+    const statsMap = new Map(stats.map((stat) => [stat.date.toISOString().split('T')[0], stat]));
+
+    // Build daily data with all dates
+    const dailyData = allDates.map((date) => {
+      const dateKey = date.toISOString().split('T')[0];
+      const stat = statsMap.get(dateKey);
+
+      if (stat) {
+        return {
+          date: stat.date,
+          ordersCount: stat.ordersCount,
+          totalRevenue: Number(stat.totalRevenue),
+          currency: stat.currency,
+          averageOrderValue: stat.ordersCount > 0 ? Number(stat.totalRevenue) / stat.ordersCount : 0,
+        };
+      }
+
+      return {
+        date,
+        ordersCount: 0,
+        totalRevenue: 0,
+        currency: 'MDL',
+        averageOrderValue: 0,
+      };
+    });
 
     return {
       restaurantId,
@@ -43,20 +75,7 @@ export class StatisticsService {
         startDate: start,
         endDate: end,
       },
-      summary: {
-        totalOrders,
-        totalRevenue,
-        currency: stats[0]?.currency || 'MDL',
-        averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-        daysWithOrders: stats.filter((s) => s.ordersCount > 0).length,
-      },
-      dailyData: stats.map((stat) => ({
-        date: stat.date,
-        ordersCount: stat.ordersCount,
-        totalRevenue: Number(stat.totalRevenue),
-        currency: stat.currency,
-        averageOrderValue: stat.ordersCount > 0 ? Number(stat.totalRevenue) / stat.ordersCount : 0,
-      })),
+      dailyData,
     };
   }
 }

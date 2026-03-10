@@ -18,6 +18,7 @@ model User {
   updatedAt              DateTime                @updatedAt
   configKey              String                  @unique @default(dbgenerated("('acc_'::text || SUBSTRING(md5(((random())::text || (clock_timestamp())::text)) FROM 1 FOR 16))"))
   emailVerificationToken EmailVerificationToken?
+  passwordResetTokens    PasswordResetToken[]
   restaurants            Restaurant[]
 }
 
@@ -25,6 +26,15 @@ model EmailVerificationToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
   userId    Int      @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

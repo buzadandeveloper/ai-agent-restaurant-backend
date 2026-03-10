@@ -9,7 +9,19 @@ import {
 } from '@nestjs/swagger';
 import type { Response as ResponseType } from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto, LoginResponseDto, RegisterDto, RegisterResponseDto, VerifyEmailResponseDto } from './dto';
+import {
+  ForgotPasswordDto,
+  ForgotPasswordResponseDto,
+  LoginDto,
+  LoginResponseDto,
+  RegisterDto,
+  RegisterResponseDto,
+  ResetPasswordDto,
+  ResetPasswordResponseDto,
+  VerifyEmailResponseDto,
+  VerifyResetCodeDto,
+  VerifyResetCodeResponseDto,
+} from './dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -39,5 +51,29 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   login(@Body() payload: LoginDto) {
     return this.authService.login(payload);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset code' })
+  @ApiResponse({ status: 200, type: ForgotPasswordResponseDto })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  forgotPassword(@Body() payload: ForgotPasswordDto) {
+    return this.authService.forgotPassword(payload);
+  }
+
+  @Post('verify-reset-code')
+  @ApiOperation({ summary: 'Verify password reset code' })
+  @ApiResponse({ status: 200, type: VerifyResetCodeResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired code' })
+  verifyResetCode(@Body() payload: VerifyResetCodeDto) {
+    return this.authService.verifyResetCode(payload);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, type: ResetPasswordResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired token' })
+  resetPassword(@Body() payload: ResetPasswordDto) {
+    return this.authService.resetPassword(payload);
   }
 }

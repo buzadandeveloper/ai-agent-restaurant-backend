@@ -1,10 +1,11 @@
-import { KnowledgeBaseData } from '../types/knowledge-base-data.types';
+import { KnowledgeBaseData, UserWithRestaurantsData } from '../types/knowledge-base-data.types';
 
-export const getKnowledgeBase = (userProfileData: KnowledgeBaseData) => {
+
+export const getKnowledgeBase = (UserWithRestaurants: UserWithRestaurantsData): KnowledgeBaseData => {
   return {
-    firstName: userProfileData.firstName,
-    lastName: userProfileData.lastName,
-    restaurants: userProfileData.restaurants.map((restaurant) => ({
+    firstName: UserWithRestaurants.firstName,
+    lastName: UserWithRestaurants.lastName,
+    restaurants: UserWithRestaurants.restaurants.map((restaurant) => ({
       id: restaurant.id,
       name: restaurant.name,
       description: restaurant.description,

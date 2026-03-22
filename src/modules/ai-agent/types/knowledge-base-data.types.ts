@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 export type KnowledgeBaseData = {
   firstName: string;
   lastName: string;
@@ -25,3 +27,22 @@ export type KnowledgeBaseData = {
     }>;
   }>;
 };
+
+export type UserWithRestaurantsData = Prisma.UserGetPayload<{
+  include: {
+    restaurants: {
+      include: {
+        tables: true;
+        categories: {
+          include: {
+            items: {
+              where: {
+                isAvailable: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;

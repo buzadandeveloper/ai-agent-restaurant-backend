@@ -6,7 +6,7 @@ import { buildAgentConfig } from './utils/build-agent-config';
 import { CreateOrderDto, CreateOrderItemDto } from '../orders/dto';
 import { AxiosResponse } from 'axios';
 import axios from 'axios';
-import { SessionResponseDto } from './dto/index';
+import { SessionResponseDto } from './dto';
 import { getKnowledgeBase } from './utils/get-knowledge-base';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class AiAgentService {
     private ordersService: OrdersService,
   ) {}
 
-  async createSession(configKey: string) {
+  async createSession(configKey: string, aiProviderUrl: string, aiProviderApiKey: string): Promise<SessionResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { configKey },
       include: {
@@ -46,16 +46,12 @@ export class AiAgentService {
     const agentConfig = buildAgentConfig(knowledgeBase);
 
     try {
-      const response: AxiosResponse<SessionResponseDto> = await axios.post(
-        'https://api.openai.com/v1/realtime/sessions',
-        agentConfig,
-        {
-          headers: {
-            Authorization: `Bearer ${this.configService.get<string>('OPENAI_API_KEY')}`,
-            'Content-Type': 'application/json',
-          },
+      const response: AxiosResponse<SessionResponseDto> = await axios.post(aiProviderUrl, agentConfig, {
+        headers: {
+          Authorization: `Bearer ${aiProviderApiKey}`,
+          'Content-Type': 'application/json',
         },
-      );
+      });
 
       return response.data;
     } catch (error) {

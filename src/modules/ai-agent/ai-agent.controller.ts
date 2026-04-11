@@ -1,5 +1,5 @@
-import { Body, Controller, HttpStatus, HttpException, Post, Query, Res } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, HttpStatus, HttpException, Post, Query, Res, Headers } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AiAgentService } from './ai-agent.service';
 import { SessionResponseDto } from './dto';
@@ -12,15 +12,37 @@ export class AiAgentController {
   @Post('session')
   @ApiOperation({
     summary: 'Create AI Agent session',
-    description: 'Creates a realtime session with OpenAI AI Agent using configKey',
+    description: 'Creates a realtime session with AI provider using configKey',
   })
   @ApiQuery({ name: 'configKey', description: 'User config key', type: String })
+  @ApiHeader({
+    name: 'X-AI-Provider-URL',
+    description: 'AI provider session endpoint URL (e.g., https://api.openai.com/v1/realtime/sessions)',
+    required: true,
+  })
+  @ApiHeader({
+    name: 'X-AI-Provider-Key',
+    description: 'AI provider API key',
+    required: true,
+  })
   @ApiResponse({ status: 201, description: 'Session created successfully', type: SessionResponseDto })
+  @ApiResponse({ status: 400, description: 'Missing required headers' })
   @ApiResponse({ status: 404, description: 'User or restaurant not found' })
   @ApiResponse({ status: 500, description: 'Failed to create session' })
-  async createSession(@Query('configKey') configKey: string, @Res() res: Response) {
+  async createSession(
+    @Query('configKey') configKey: string,
+    @Headers('x-ai-provider-url') aiProviderUrl: string,
+    @Headers('x-ai-provider-key') aiProviderApiKey: string,
+    @Res() res: Response,
+  ) {
+    if (!aiProviderUrl || !aiProviderApiKey) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        message: 'Missing required headers: X-AI-Provider-URL and X-AI-Provider-Key',
+      });
+    }
+
     try {
-      const session = await this.aiAgentService.createSession(configKey);
+      const session = await this.aiAgentService.createSession(configKey, aiProviderUrl, aiProviderApiKey);
       return res.status(HttpStatus.CREATED).json(session);
     } catch (err) {
       if (err instanceof HttpException) {

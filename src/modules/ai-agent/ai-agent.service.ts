@@ -17,7 +17,13 @@ export class AiAgentService {
     private ordersService: OrdersService,
   ) {}
 
-  async createSession(configKey: string, aiProviderUrl: string, aiProviderApiKey: string, model:string, voice:string): Promise<SessionResponseDto> {
+  async createSession(
+    configKey: string,
+    aiProviderUrl: string,
+    aiProviderApiKey: string,
+    model: string,
+    voice: string,
+  ): Promise<SessionResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { configKey },
       include: {

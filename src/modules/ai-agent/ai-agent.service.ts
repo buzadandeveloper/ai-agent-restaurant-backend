@@ -17,7 +17,7 @@ export class AiAgentService {
     private ordersService: OrdersService,
   ) {}
 
-  async createSession(configKey: string, aiProviderUrl: string, aiProviderApiKey: string): Promise<SessionResponseDto> {
+  async createSession(configKey: string, aiProviderUrl: string, aiProviderApiKey: string, model:string, voice:string): Promise<SessionResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { configKey },
       include: {
@@ -43,7 +43,7 @@ export class AiAgentService {
     }
 
     const knowledgeBase = getKnowledgeBase(user);
-    const agentConfig = buildAgentConfig(knowledgeBase);
+    const agentConfig = buildAgentConfig(knowledgeBase, model, voice);
 
     try {
       const response: AxiosResponse<SessionResponseDto> = await axios.post(aiProviderUrl, agentConfig, {

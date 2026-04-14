@@ -2,11 +2,14 @@ import { KnowledgeBaseData } from '../types/knowledge-base-data.types';
 import { tools } from './tools';
 import { getInstructions } from './get-instructions';
 
-export const buildAgentConfig = (knowledgeBase: KnowledgeBaseData) => {
+export const buildAgentConfig = (knowledgeBase: KnowledgeBaseData, model: string, voice: string) => {
   return {
-    model: 'gpt-4o-realtime-preview-2024-12-17',
-    voice: 'verse',
+    model,
+    voice,
     instructions: getInstructions(knowledgeBase),
     tools,
   };
 };
+
+//'gpt-4o-realtime-preview-2024-12-17'
+//'verse'

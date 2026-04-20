@@ -115,45 +115,38 @@ export class RestaurantService {
     }
 
     // Use transaction to ensure atomicity - if anything fails, nothing is saved
-    const restaurant = await this.prisma.$transaction(async (tx) => {
-      // Create restaurant
-      const newRestaurant = await tx.restaurant.create({
-        data: {
-          name: restaurantData.name,
-          description: restaurantData.description,
-          founder: restaurantData.founder,
-          administrator: restaurantData.administrator,
-          numberOfTables: restaurantData.numberOfTables,
-          phone: restaurantData.phone,
-          address: restaurantData.address,
-          ownerId: ownerId,
-        },
-      });
+    const restaurant = await this.prisma.$transaction(
+      async (tx) => {
+        // Create restaurant
+        const newRestaurant = await tx.restaurant.create({
+          data: {
+            name: restaurantData.name,
+            description: restaurantData.description,
+            founder: restaurantData.founder,
+            administrator: restaurantData.administrator,
+            numberOfTables: restaurantData.numberOfTables,
+            phone: restaurantData.phone,
+            address: restaurantData.address,
+            ownerId: ownerId,
+          },
+        });
 
-      // Process CSV menu if provided (inside transaction)
-      if (csvRows.length > 0) {
-        const categoryCache = new Map();
-        for (const row of csvRows) {
-          const categoryName = row.category.trim();
-          const cacheKey = `${newRestaurant.id}_${categoryName}`;
-          let category = categoryCache.get(cacheKey);
+        // Process CSV menu if provided (inside transaction)
+        if (csvRows.length > 0) {
+          // Pass 1: create unique categories
+          const uniqueCategories = [...new Set(csvRows.map((r) => r.category.trim()))];
+          const categoryMap = new Map<string, number>();
 
-          if (!category) {
-            category = await tx.menuCategory.findFirst({
-              where: { name: categoryName, restaurantId: newRestaurant.id },
+          for (const categoryName of uniqueCategories) {
+            const category = await tx.menuCategory.create({
+              data: { name: categoryName, restaurantId: newRestaurant.id },
             });
-
-            if (!category) {
-              category = await tx.menuCategory.create({
-                data: { name: categoryName, restaurantId: newRestaurant.id },
-              });
-            }
-
-            categoryCache.set(cacheKey, category);
+            categoryMap.set(categoryName, category.id);
           }
 
-          await tx.menuItem.create({
-            data: {
+          // Pass 2: bulk insert all menu items
+          await tx.menuItem.createMany({
+            data: csvRows.map((row) => ({
               name: row.name,
               description: row.description,
               price: parseFloat(row.price),
@@ -163,14 +156,15 @@ export class RestaurantService {
               isAvailable: row.isAvailable
                 ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
                 : true,
-              categoryId: category.id,
-            },
+              categoryId: categoryMap.get(row.category.trim())!,
+            })),
           });
         }
-      }
 
-      return newRestaurant;
-    });
+        return newRestaurant;
+      },
+      { timeout: 30_000, maxWait: 5_000 },
+    );
 
     return { message: 'Restaurant created', restaurant };
   }
@@ -210,60 +204,46 @@ export class RestaurantService {
     }
 
     // Use transaction to ensure atomicity
-    const updatedRestaurant = await this.prisma.$transaction(async (tx) => {
-      // Update restaurant
-      const updated = await tx.restaurant.update({
-        where: { id: restaurantId },
-        data: {
-          name: restaurantData.name,
-          description: restaurantData.description,
-          founder: restaurantData.founder,
-          administrator: restaurantData.administrator,
-          numberOfTables: restaurantData.numberOfTables,
-          phone: restaurantData.phone,
-          address: restaurantData.address,
-        },
-      });
-
-      // If CSV provided, replace menu
-      if (csvRows.length > 0) {
-        // Delete existing menu items and categories for this restaurant to avoid duplicates
-        await tx.menuItem.deleteMany({
-          where: {
-            category: {
-              restaurantId: updated.id,
-            },
+    const updatedRestaurant = await this.prisma.$transaction(
+      async (tx) => {
+        // Update restaurant
+        const updated = await tx.restaurant.update({
+          where: { id: restaurantId },
+          data: {
+            name: restaurantData.name,
+            description: restaurantData.description,
+            founder: restaurantData.founder,
+            administrator: restaurantData.administrator,
+            numberOfTables: restaurantData.numberOfTables,
+            phone: restaurantData.phone,
+            address: restaurantData.address,
           },
         });
 
-        await tx.menuCategory.deleteMany({
-          where: {
-            restaurantId: updated.id,
-          },
-        });
+        // If CSV provided, replace menu
+        if (csvRows.length > 0) {
+          // Delete existing menu items and categories
+          await tx.menuItem.deleteMany({
+            where: { category: { restaurantId: updated.id } },
+          });
+          await tx.menuCategory.deleteMany({
+            where: { restaurantId: updated.id },
+          });
 
-        const categoryCache = new Map();
-        for (const row of csvRows) {
-          const categoryName = row.category.trim();
-          const cacheKey = `${updated.id}_${categoryName}`;
-          let category = categoryCache.get(cacheKey);
+          // Pass 1: create unique categories
+          const uniqueCategories = [...new Set(csvRows.map((r) => r.category.trim()))];
+          const categoryMap = new Map<string, number>();
 
-          if (!category) {
-            category = await tx.menuCategory.findFirst({
-              where: { name: categoryName, restaurantId: updated.id },
+          for (const categoryName of uniqueCategories) {
+            const category = await tx.menuCategory.create({
+              data: { name: categoryName, restaurantId: updated.id },
             });
-
-            if (!category) {
-              category = await tx.menuCategory.create({
-                data: { name: categoryName, restaurantId: updated.id },
-              });
-            }
-
-            categoryCache.set(cacheKey, category);
+            categoryMap.set(categoryName, category.id);
           }
 
-          await tx.menuItem.create({
-            data: {
+          // Pass 2: bulk insert all menu items
+          await tx.menuItem.createMany({
+            data: csvRows.map((row) => ({
               name: row.name,
               description: row.description,
               price: parseFloat(row.price),
@@ -273,14 +253,15 @@ export class RestaurantService {
               isAvailable: row.isAvailable
                 ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
                 : true,
-              categoryId: category.id,
-            },
+              categoryId: categoryMap.get(row.category.trim())!,
+            })),
           });
         }
-      }
 
-      return updated;
-    });
+        return updated;
+      },
+      { timeout: 30_000, maxWait: 5_000 },
+    );
 
     return { message: 'Restaurant updated successfully', restaurant: updatedRestaurant };
   }
@@ -418,45 +399,30 @@ export class RestaurantService {
     }
 
     // Use transaction to ensure atomicity - if CSV processing fails, old menu stays intact
-    await this.prisma.$transaction(async (tx) => {
-      // First delete existing menu items and categories to replace them
-      await tx.menuItem.deleteMany({
-        where: {
-          category: {
-            restaurantId: restaurantId,
-          },
-        },
-      });
+    await this.prisma.$transaction(
+      async (tx) => {
+        // Delete existing menu items and categories
+        await tx.menuItem.deleteMany({
+          where: { category: { restaurantId: restaurantId } },
+        });
+        await tx.menuCategory.deleteMany({
+          where: { restaurantId: restaurantId },
+        });
 
-      await tx.menuCategory.deleteMany({
-        where: {
-          restaurantId: restaurantId,
-        },
-      });
+        // Pass 1: create unique categories
+        const uniqueCategories = [...new Set(csvRows.map((r) => r.category.trim()))];
+        const categoryMap = new Map<string, number>();
 
-      // Process the new CSV menu file
-      const categoryCache = new Map();
-      for (const row of csvRows) {
-        const categoryName = row.category.trim();
-        const cacheKey = `${restaurantId}_${categoryName}`;
-        let category = categoryCache.get(cacheKey);
-
-        if (!category) {
-          category = await tx.menuCategory.findFirst({
-            where: { name: categoryName, restaurantId: restaurantId },
+        for (const categoryName of uniqueCategories) {
+          const category = await tx.menuCategory.create({
+            data: { name: categoryName, restaurantId: restaurantId },
           });
-
-          if (!category) {
-            category = await tx.menuCategory.create({
-              data: { name: categoryName, restaurantId: restaurantId },
-            });
-          }
-
-          categoryCache.set(cacheKey, category);
+          categoryMap.set(categoryName, category.id);
         }
 
-        await tx.menuItem.create({
-          data: {
+        // Pass 2: bulk insert all menu items
+        await tx.menuItem.createMany({
+          data: csvRows.map((row) => ({
             name: row.name,
             description: row.description,
             price: parseFloat(row.price),
@@ -466,11 +432,12 @@ export class RestaurantService {
             isAvailable: row.isAvailable
               ? ['true', '1', 'yes', 'available'].includes(row.isAvailable.toLowerCase().trim())
               : true,
-            categoryId: category.id,
-          },
+            categoryId: categoryMap.get(row.category.trim())!,
+          })),
         });
-      }
-    });
+      },
+      { timeout: 30_000, maxWait: 5_000 },
+    );
 
     return { message: 'Restaurant menu uploaded successfully', restaurantId };
   }
